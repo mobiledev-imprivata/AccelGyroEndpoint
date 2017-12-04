@@ -59,13 +59,13 @@
 			isa = PBXGroup;
 			children = (
 				D69505E61FCF0DD800D690E3 /* Logger.swift */,
+				D69505EA1FCF189000D690E3 /* BluetoothManager.swift */,
 				D69505D41FCF0A8D00D690E3 /* AppDelegate.swift */,
 				D69505D61FCF0A8D00D690E3 /* ViewController.swift */,
 				D69505D81FCF0A8D00D690E3 /* Main.storyboard */,
 				D69505DB1FCF0A8D00D690E3 /* Assets.xcassets */,
 				D69505DD1FCF0A8D00D690E3 /* LaunchScreen.storyboard */,
 				D69505E01FCF0A8D00D690E3 /* Info.plist */,
-				D69505EA1FCF189000D690E3 /* BluetoothManager.swift */,
 			);
 			path = AccelGyroEndpoint;
 			sourceTree = "<group>";
