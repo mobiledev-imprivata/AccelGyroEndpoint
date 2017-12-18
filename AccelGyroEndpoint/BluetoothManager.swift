@@ -20,16 +20,17 @@ protocol BluetoothManagerDelegate {
 
 final class BluetoothManager: NSObject {
     
-    private let serviceUUID                  = CBUUID(string: "16884184-C1C4-4BD1-A8F1-6ADCB272B18B")
-    private let readCharacteristicUUID       = CBUUID(string: "0246FAC2-1145-409B-88C4-F43D4E05A8C5")
-    private let subscribedCharacteristicUUID = CBUUID(string: "2031019E-0380-4F27-8B12-E572858FE928")
+    private let serviceUUID                     = CBUUID(string: "16884184-C1C4-4BD1-A8F1-6ADCB272B18B")
+    private let setIntervalCharacteristicUUID   = CBUUID(string: "81426A40-F761-4F45-A58B-D27A780AAEF9")
+    private let getMotionDataCharacteristicUUID = CBUUID(string: "0246FAC2-1145-409B-88C4-F43D4E05A8C5")
 
     private let timeoutInSecs = 5.0
     
     private var centralManager: CBCentralManager!
     private var peripheral: CBPeripheral!
-    private var readCharacteristic: CBCharacteristic!
-    
+    private var setIntervalCharacteristic: CBCharacteristic!
+    private var getMotionDataCharacteristic: CBCharacteristic!
+
     private var isPoweredOn = false
     private var scanTimer: Timer!
     
@@ -58,7 +59,8 @@ final class BluetoothManager: NSObject {
     }
     
     func updateNow() {
-         peripheral.readValue(for: readCharacteristic)
+        let data = "7.5".data(using: .utf8)!
+        peripheral.writeValue(data, for: setIntervalCharacteristic, type: .withResponse)
     }
     
 }
@@ -126,27 +128,34 @@ extension BluetoothManager: CBPeripheralDelegate {
     }
     
     func peripheral(_ peripheral: CBPeripheral, didDiscoverCharacteristicsFor service: CBService, error: Error?) {
-        let message = "peripheral didDiscoverCharacteristicsFor service " + (error == nil ? "\(service.uuid) ok" :  ("error " + error!.localizedDescription))
+        let message = "peripheral didDiscoverCharacteristicsFor service " + (error == nil ? "\(service.uuid.uuidString) ok" :  ("error " + error!.localizedDescription))
         log(message)
         guard error == nil else { return }
         for characteristic in service.characteristics! {
-            log("characteristic \(characteristic.uuid)")
-            if characteristic.uuid == subscribedCharacteristicUUID {
-                peripheral.setNotifyValue(true, for: characteristic)
-            } else if characteristic.uuid == readCharacteristicUUID {
-                self.readCharacteristic = characteristic
+            log("characteristic \(characteristic.uuid.uuidString)")
+            if characteristic.uuid == setIntervalCharacteristicUUID {
+                self.setIntervalCharacteristic = characteristic
+            } else  if characteristic.uuid == getMotionDataCharacteristicUUID {
+                self.getMotionDataCharacteristic = characteristic
             }
         }
         delegate?.updateConnection(bluetoothConnection: .connected)
     }
     
+    func peripheral(_ peripheral: CBPeripheral, didWriteValueFor characteristic: CBCharacteristic, error: Error?) {
+        let message = "peripheral didWriteValueFor characteristic " + (error == nil ? "\(characteristic.uuid.uuidString) ok" :  ("error " + error!.localizedDescription))
+        log(message)
+        guard error == nil else { return }
+        peripheral.readValue(for: getMotionDataCharacteristic)
+    }
+    
     func peripheral(_ peripheral: CBPeripheral, didUpdateValueFor characteristic: CBCharacteristic, error: Error?) {
-        let message = "peripheral didUpdateValueFor characteristic " + (error == nil ? "\(characteristic.uuid) ok" :  ("error " + error!.localizedDescription))
+        let message = "peripheral didUpdateValueFor characteristic " + (error == nil ? "\(characteristic.uuid.uuidString) ok" :  ("error " + error!.localizedDescription))
         log(message)
         guard error == nil else { return }
         let response = String(data: characteristic.value!, encoding: String.Encoding.utf8)!
         log(response)
-        delegate?.updateData(data: response, isRequested: characteristic.uuid == readCharacteristicUUID)
+        delegate?.updateData(data: response, isRequested: true)
     }
     
 }
